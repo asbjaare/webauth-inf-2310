@@ -21,10 +21,6 @@ if not os.path.exists(PASSWORDFILE):
 @app.route('/')
 def home():
 
-    # TODO: Check if user is logged in
-    # if user is logged in
-    #    return render_template('loggedin.html')
-
     return render_template('home.html')
 
 
@@ -41,6 +37,12 @@ def register_post():
     username = request.form['username']
     password = request.form['password']
     matchpassword = request.form['matchpassword']
+
+    # password needs to have, one number, and be at least 8 characters long
+    if len(password) < 16:
+        return render_template('register.html', error="Password must be at least 16 characters long")
+    if not any(char.isdigit() for char in password):
+        return render_template('register.html', error="Password must contain at least one number")
 
     if password != matchpassword:
         return render_template('register.html', error="Passwords do not match")
@@ -62,7 +64,7 @@ def register_post():
     with open(PASSWORDFILE, 'a') as f:
         f.write(hashed.decode('utf-8') + "\n")
 
-    return redirect(url_for('home'))
+    return render_template('loggedin.html', username=username)
 
 
 # Display login form
@@ -86,7 +88,7 @@ def login_post():
             if username == line.split(PASSWORDFILEDELIMITER)[0]:
                 # check if password is correct
                 if bcrypt.checkpw(password.encode('utf-8'), line.split(PASSWORDFILEDELIMITER)[1].rstrip('\n').encode('utf-8')):
-                    return render_template('loggedin.html')
+                    return render_template('loggedin.html', username=username)
                 else:
                     return render_template('login.html', error="Incorrect password. Password was: " + line.split(PASSWORDFILEDELIMITER)[1])
 
@@ -95,5 +97,4 @@ def login_post():
 
 if __name__ == '__main__':
 
-    # TODO: Add TSL
-    app.run(debug=True, ssl_context='adhoc')
+    app.run()
